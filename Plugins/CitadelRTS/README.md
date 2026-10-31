@@ -19,16 +19,15 @@ Analiza, z której to wynika: `Docs/Analiza_ProjectCitadel.md`.
 
 ## Włączenie (jednorazowo)
 
-Plugin jest domyślnie **wyłączony**, więc projekt otwiera się tak jak dotąd.
+Projekt jest już projektem C++ (`Source/ProjectCitadel`), a plugin jest włączony w `ProjectCitadel.uproject`.
+Pierwsza kompilacja najlepiej w Visual Studio, bo tam widać ewentualne błędy (edytor pokazuje tylko
+„could not be compiled”).
 
-1. Wymagany Visual Studio 2022 z pakietem *Game development with C++*.
-2. Projekt jest teraz czysto Blueprintowy, więc najpierw trzeba go zamienić na projekt C++:
-   **Tools → New C++ Class… → None → nazwa np. `CitadelGame` → Create Class**.
-   Edytor wygeneruje `Source/` i rozwiązanie Visual Studio, a potem skompiluje projekt.
-3. **Edit → Plugins**, wyszukaj **Citadel RTS**, zaznacz *Enabled*, zrestartuj edytor
-   i na pytanie o przebudowanie modułów odpowiedz *Yes*.
-   Alternatywa: zamknij edytor, PPM na `ProjectCitadel.uproject` → *Generate Visual Studio project files*,
-   otwórz `.sln`, zbuduj konfigurację `Development Editor`.
+1. Wymagany Visual Studio 2022 z pakietem *Game development with C++* (w Visual Studio Installer).
+2. Zamknij edytor. PPM na `ProjectCitadel.uproject` → *Generate Visual Studio project files*
+   (w Windows 11 może być pod *Pokaż więcej opcji*).
+3. Otwórz `ProjectCitadel.sln`, na górze wybierz `Development Editor` i `Win64`, potem *Build → Build Solution* (Ctrl+Shift+B).
+4. Po udanej kompilacji otwieraj projekt normalnie przez `ProjectCitadel.uproject`.
 
 ---
 
