@@ -1,0 +1,19 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1",
+	"FriendlyName": "Citadel RTS",
+	"Description": "RTS gameplay core for ProjectCitadel: size-aware crowd avoidance, group formations, building production queue and unit combat.",
+	"Category": "Gameplay",
+	"CreatedBy": "ProjectCitadel",
+	"CanContainContent": false,
+	"EnabledByDefault": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "CitadelRTS",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}

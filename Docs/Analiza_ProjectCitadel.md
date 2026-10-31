@@ -224,8 +224,8 @@ Przy RTS z dziesiątkami/setkami jednostek rdzeń warto mieć w C++, a Blueprint
   ścieżki, obsługa porażek, priorytet rozkazów gracza nad auto-aggro.
 - `CitadelUnitSubsystem`: rejestr jednostek per drużyna + zapytania przestrzenne zamiast sfer overlap.
 
-Wymaga to przejścia projektu na C++ (Visual Studio + kompilacja). Można to zrobić bez psucia obecnego
-stanu jako plugin włączany ręcznie, a potem stopniowo przepinać Blueprinty (np. `AIController_Unit` → nowy rodzic).
+Zaimplementowane w `Plugins/CitadelRTS` (domyślnie wyłączony plugin). Włączenie i wdrożenie
+krok po kroku w Blueprintach: `Plugins/CitadelRTS/README.md`.
 
 ### Sprzątanie
 Usunąć `BP_Unit`, `BP_Unit_backup`, `BP_Worker_backup`; *Fix Up Redirectors* w `Content/ProjectCitadel`;
