@@ -1,6 +1,7 @@
 #include "CitadelUnitAIController.h"
 #include "CitadelCombatComponent.h"
 #include "CitadelRTS.h"
+#include "CitadelUnitSubsystem.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -20,6 +21,7 @@ void ACitadelUnitAIController::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 	ApplyCrowdSettings();
 	ApplySmoothTurning();
+	ResolveSpawnOverlap();
 
 	if (bYieldToBlockedUnits)
 	{
@@ -32,6 +34,20 @@ void ACitadelUnitAIController::OnUnPossess()
 {
 	GetWorldTimerManager().ClearTimer(YieldTimer);
 	Super::OnUnPossess();
+}
+
+FPathFollowingRequestResult ACitadelUnitAIController::MoveTo(const FAIMoveRequest& MoveRequest, FNavPathSharedPtr* OutPath)
+{
+	UWorld* World = GetWorld();
+	UCitadelUnitSubsystem* Units = World ? World->GetSubsystem<UCitadelUnitSubsystem>() : nullptr;
+	if (!bSpreadMoves || !Units || !GetPawn() || !MoveRequest.IsValid() || MoveRequest.IsMoveToActorRequest())
+	{
+		return Super::MoveTo(MoveRequest, OutPath);
+	}
+
+	FAIMoveRequest Spread = MoveRequest;
+	Spread.UpdateGoalLocation(Units->ClaimMoveSlot(GetPawn(), MoveRequest.GetGoalLocation()));
+	return Super::MoveTo(Spread, OutPath);
 }
 
 void ACitadelUnitAIController::ApplyCrowdSettings()
@@ -77,6 +93,35 @@ void ACitadelUnitAIController::ApplySmoothTurning()
 	Movement->bOrientRotationToMovement = false;
 	Movement->bUseControllerDesiredRotation = true;
 	Movement->RotationRate = FRotator(0.f, TurnRate, 0.f);
+}
+
+void ACitadelUnitAIController::ResolveSpawnOverlap()
+{
+	APawn* ControlledPawn = GetPawn();
+	UWorld* World = GetWorld();
+	UCitadelUnitSubsystem* Units = World ? World->GetSubsystem<UCitadelUnitSubsystem>() : nullptr;
+	if (!bResolveSpawnOverlap || !ControlledPawn || !Units)
+	{
+		return;
+	}
+
+	float Radius = 0.f;
+	float HalfHeight = 0.f;
+	ControlledPawn->GetSimpleCollisionCylinder(Radius, HalfHeight);
+	const FVector Location = ControlledPawn->GetActorLocation();
+	// Slightly smaller than the unit, so a neighbour that merely touches does not count.
+	const FCollisionShape Footprint = FCollisionShape::MakeCapsule(Radius * 0.9f, HalfHeight * 0.9f);
+	const FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(CitadelSpawnOverlap), false, ControlledPawn);
+	if (!World->OverlapAnyTestByObjectType(Location, FQuat::Identity, FCollisionObjectQueryParams(ECC_Pawn), Footprint, QueryParams))
+	{
+		return;
+	}
+
+	const FVector Free = Units->ClaimMoveSlot(ControlledPawn, Location);
+	if (!Free.Equals(Location))
+	{
+		ControlledPawn->SetActorLocation(Free + FVector(0.f, 0.f, HalfHeight + 2.f), false, nullptr, ETeleportType::TeleportPhysics);
+	}
 }
 
 void ACitadelUnitAIController::UpdateYield()
@@ -160,6 +205,7 @@ bool ACitadelUnitAIController::TryStepAside(const FVector& Goal, float Radius)
 	{
 		return false;
 	}
-	// Strafing: the unit sidesteps instead of turning its back on the one passing.
+	// Exactly this spot, and strafing: the unit sidesteps instead of turning its back on the one passing.
+	TGuardValue<bool> ExactMove(bSpreadMoves, false);
 	return MoveToLocation(OnNavMesh.Location, Radius * 0.25f, false, true, false, true) == EPathFollowingRequestResult::RequestSuccessful;
 }

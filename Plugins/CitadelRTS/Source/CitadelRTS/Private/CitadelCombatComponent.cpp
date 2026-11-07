@@ -1,6 +1,7 @@
 #include "CitadelCombatComponent.h"
 #include "AIController.h"
 #include "CitadelFormationLibrary.h"
+#include "CitadelUnitAIController.h"
 #include "CitadelUnitSubsystem.h"
 #include "Components/PrimitiveComponent.h"
 #include "Engine/World.h"
@@ -288,7 +289,18 @@ void UCitadelCombatComponent::ChaseTarget(AActor* Victim, double Distance)
 		{
 			Goal = Victim->GetActorLocation();
 		}
+		// Exactly that point: spreading it to a free spot could move it out of reach.
+		ACitadelUnitAIController* CitadelAI = Cast<ACitadelUnitAIController>(AI);
+		const bool bWasSpreading = CitadelAI && CitadelAI->bSpreadMoves;
+		if (CitadelAI)
+		{
+			CitadelAI->bSpreadMoves = false;
+		}
 		AI->MoveToLocation(Goal, Acceptance, true, true, true, false);
+		if (CitadelAI)
+		{
+			CitadelAI->bSpreadMoves = bWasSpreading;
+		}
 	}
 	ChaseRequestId = AI->GetCurrentMoveRequestID();
 	bChaseIssued = true;

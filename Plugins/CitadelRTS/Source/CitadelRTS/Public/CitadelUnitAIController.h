@@ -35,9 +35,21 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Citadel|Crowd")
 	void ApplyCrowdSettings();
 
+	/** Spreads location moves (see bSpreadMoves). */
+	virtual FPathFollowingRequestResult MoveTo(const FAIMoveRequest& MoveRequest, FNavPathSharedPtr* OutPath = nullptr) override;
+
 	/** Runtime switch for stepping aside, e.g. off while a unit must hold its spot. */
 	UPROPERTY(BlueprintReadWrite, Category = "Citadel|Yield")
 	bool bCanYield = true;
+
+	/**
+	 * Units sent to the same point in the same frame (an order for a selection) each get their own spot
+	 * around it, and a spot taken by a standing unit moves to free ground next to it. Applies to every
+	 * move to a location, including AI MoveTo from Blueprints; moves to an actor are left alone.
+	 * Turn off around a move that must end exactly at its point.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Citadel|Formation")
+	bool bSpreadMoves = true;
 
 protected:
 	virtual void OnPossess(APawn* InPawn) override;
@@ -76,6 +88,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Citadel|Turning", meta = (ClampMin = "1", EditCondition = "bSmoothTurning"))
 	float TurnRate = 540.f;
 
+	/** When the unit starts inside another one (e.g. spawned on an occupied spot), move it to free ground next to it. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Citadel|Formation")
+	bool bResolveSpawnOverlap = true;
+
 	/** While standing, step aside when a friendly moving unit is stuck pushing into this one. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Citadel|Yield")
 	bool bYieldToBlockedUnits = true;
@@ -89,6 +105,7 @@ protected:
 
 private:
 	void ApplySmoothTurning();
+	void ResolveSpawnOverlap();
 	void UpdateYield();
 	bool TryStepAside(const FVector& Goal, float Radius);
 

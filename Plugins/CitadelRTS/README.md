@@ -56,19 +56,24 @@ Dodatkowo kontroler:
 
 Podgląd w PIE: Gameplay Debugger (klawisz `'`), zaznacz jednostkę — widać ścieżkę i navmesh.
 
-## 2. Formacje — `Compute Formation Destinations`
+## 2. Formacje — automatycznie w `CitadelUnitAIController`
 
-W `PC_ProjectCitadel`, tam gdzie rozkaz ruchu woła `MoveToThisLocation(HitResult.Location, SelectedActors)` dla każdej jednostki:
+**Nie wymaga zmian w Blueprintach.** Kontroler przechwytuje każdy ruch do punktu (także `AI MoveTo` z Blueprintów)
+i oddaje go `CitadelUnitSubsystem::ClaimMoveSlot`:
+- jednostki wysłane w tej samej klatce w ten sam punkt (rozkaz dla zaznaczenia) dostają osobne miejsca w pierścieniach
+  wokół niego, od środka na zewnątrz, z odstępem = średnica największej z nich × 1.15; każda bierze z bieżącego pierścienia
+  miejsce najbliższe sobie, więc ścieżki mało się krzyżują,
+- miejsce poza navmeshem albo zajęte przez jednostkę spoza rozkazu jest pomijane — nikt nie próbuje dojść „w” stojącą jednostkę,
+  także pojedyncza.
+Ruchy do aktora (atak, złoże) nie są zmieniane. Wyłączenie: `bSpreadMoves` na kontrolerze (*Citadel|Formation*).
 
-1. Przed pętlą: **Compute Formation Destinations** (`Units` = `SelectedActors`, `Target` = lokacja z hit resulta) → `Destinations`.
-2. W pętli: `MoveToThisLocation(Destinations[Array Index], SelectedActors)`.
+Kontroler przy possess sprawdza też, czy jednostka nie zaczyna w środku innej (np. zrespiona na zajętym spawn poincie);
+jeśli tak, przestawia ją na wolne miejsce obok (`bResolveSpawnOverlap`).
 
-Szyk jest siatką wokół kliknięcia, obróconą w kierunku marszu, z odstępem = średnica największej jednostki × `SpacingScale` (1.15),
-a punkty są rzutowane na navmesh. Jednostki z przodu grupy dostają przedni rząd, więc ścieżki się nie krzyżują.
-Punkt zajęty przez jednostkę spoza rozkazu jest przesuwany na najbliższe wolne miejsce, więc nikt nie próbuje dojść „w” stojącą jednostkę.
-
-Potem w `BP_Worker` odłącz łańcuch `MoveToSuccessSphere` (BeginOverlap → `StopActiveMovement` innych, `Test()`):
-przy osobnych punktach docelowych już niczego nie naprawia, a zatrzymuje jednostki, które tylko przechodzą obok kolegi, który już dotarł.
+Opcjonalnie: szyk z rzędami ustawionymi w kierunku marszu daje **Compute Formation Destinations** (`CitadelFormationLibrary`),
+wołane w `PC_ProjectCitadel` przed pętlą rozkazów — `MoveToThisLocation(Destinations[Array Index], SelectedActors)`.
+Łańcuch `MoveToSuccessSphere` w `BP_Worker` (zatrzymywanie kolegów, którzy dotkną tego, kto już doszedł) można zostawić;
+przy odstępach 1.15 × średnica praktycznie nie przeszkadza, ale da się go odłączyć dla czystości.
 
 ## 3. Produkcja — `CitadelProductionComponent`
 
