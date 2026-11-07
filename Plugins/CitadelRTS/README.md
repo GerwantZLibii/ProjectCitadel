@@ -44,6 +44,16 @@ Pierwsza kompilacja najlepiej w Visual Studio, bo tam widać ewentualne błędy 
    (promień navmesha 170, crowd do promienia 450 i 200 agentów, dynamiczny navmesh).
 3. Jeśli jednostka zmienia rozmiar w trakcie gry, wywołaj na kontrolerze `ApplyCrowdSettings`.
 
+Dodatkowo kontroler:
+- **Obraca jednostkę płynnie** (*Citadel|Turning*, `TurnRate` = 540°/s) w stronę ścieżki zamiast w stronę chwilowej
+  prędkości z omijania (`bFaceVelocity` wyłączone). To usuwa drganie modelu na boki. Ustawia przy tym na Characterze
+  `Use Controller Rotation Yaw = false` i `Use Controller Desired Rotation = true`; obracanie przez `SetActorRotation`
+  w Blueprintach działa dalej.
+- **Ustępuje drogi** (*Citadel|Yield*): stojąca jednostka, w którą wpycha się zablokowana jednostka idąca dalej,
+  robi krok w bok (co `YieldCheckInterval`, nie częściej niż co `YieldCooldown`). Nie ustępuje wrogom ani w trakcie walki
+  z `CitadelCombatComponent`. Żeby jednostka trzymała miejsce (np. robotnik przy złożu), ustaw na kontrolerze `bCanYield = false`.
+  Krok w bok odbywa się w animacji Idle, bo animacje są teraz sterowane stanem, a nie prędkością.
+
 Podgląd w PIE: Gameplay Debugger (klawisz `'`), zaznacz jednostkę — widać ścieżkę i navmesh.
 
 ## 2. Formacje — `Compute Formation Destinations`
@@ -55,6 +65,7 @@ W `PC_ProjectCitadel`, tam gdzie rozkaz ruchu woła `MoveToThisLocation(HitResul
 
 Szyk jest siatką wokół kliknięcia, obróconą w kierunku marszu, z odstępem = średnica największej jednostki × `SpacingScale` (1.15),
 a punkty są rzutowane na navmesh. Jednostki z przodu grupy dostają przedni rząd, więc ścieżki się nie krzyżują.
+Punkt zajęty przez jednostkę spoza rozkazu jest przesuwany na najbliższe wolne miejsce, więc nikt nie próbuje dojść „w” stojącą jednostkę.
 
 Potem w `BP_Worker` odłącz łańcuch `MoveToSuccessSphere` (BeginOverlap → `StopActiveMovement` innych, `Test()`):
 przy osobnych punktach docelowych już niczego nie naprawia, a zatrzymuje jednostki, które tylko przechodzą obok kolegi, który już dotarł.
